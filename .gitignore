@@ -1,0 +1,6 @@
+target/**
+.backups
+**/.backups
+
+*.swp
+*.log
