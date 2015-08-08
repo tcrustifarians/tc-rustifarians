@@ -4,32 +4,26 @@ extern crate rand;
 use std::io::Write;
 
 fn main() {
-  let ans = answer();
+    let ans = answer();
 
-  println!("{:?}", ans);
+    println!("Answer: {}", ans);
 
-  let mut string = return_guess("Enter your guess: ");
-
-  println!("You entered {}", string);
-
-  if "abc".to_string() == "abc".to_string() {
-    println!("Now you know your abc's");
-  }
-
-  // The following causes a borrow error
-  //   string.remove(string.len() - 1);
-  // But the following two lines fix it
-  let idx = string.len() - 1;
-  string.remove(idx);
-
-  println!("len is {}", string.len());
-
-  if ans.to_string() == string {
-    println!("You are right");
-  }
+    loop {
+        match return_guess("Enter your guess: ") {
+            Some(guess) => {
+                if guess == ans {
+                    println!("You are right");
+                    break;
+                }
+            },
+            None        => {
+                println!("Invalid guess. It is not a number");
+            }
+        }
+    }
 }
 
-fn return_guess(prompt:&str) -> String
+fn return_guess(prompt:&str) -> Option<i32>
 {
   print!("{}", prompt);
   let _ = std::io::stdout().flush();
@@ -40,14 +34,14 @@ fn return_guess(prompt:&str) -> String
            .ok()
            .expect("Failed to read line");
 
-  string
+  string.trim().parse::<i32>().ok()
 }
 
 
 fn answer() -> i32
 {
   let num = rand::random::<f32>();
-  let ans: i32 = (num * 100.0).floor() as i32;
+  let ans: i32 = (num * 10.0).floor() as i32;
   ans
 }
 
