@@ -70,7 +70,7 @@ fn emitln(s: &str) {
 fn factor(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
     if token == '(' {
         token = consume('(', token, tokens);
-        expression();
+        token = expression(token, tokens);
         token = consume(')', token, tokens);
         return token
     }
@@ -131,24 +131,23 @@ fn subtract(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
     token
 }
 
-fn expression() {
-    let mut tokens = io::stdin().chars();
-    let mut token = advance(&mut tokens);
+fn expression(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
     if is_add_op(token) {
         emitln("xorq %rax, %rax");
     }
     else {
-        token = term(token, &mut tokens);
+        token = term(token, tokens);
     }
 
     while is_add_op(token) {
         emitln("pushq %rax");
         match token {
-            '+' => token = add(token, &mut tokens),
-            '-' => token = subtract(token, &mut tokens),
+            '+' => token = add(token, tokens),
+            '-' => token = subtract(token, tokens),
             _   => expected("add operation")
         }
     }
+    token
 }
 
 fn preamble() {
@@ -168,6 +167,10 @@ fn wrapup() {
 
 fn main() {
     preamble();
-    expression();
+
+    let mut tokens = io::stdin().chars();
+    let token = advance(&mut tokens);
+    expression(token, &mut tokens);
+
     wrapup();
 }
