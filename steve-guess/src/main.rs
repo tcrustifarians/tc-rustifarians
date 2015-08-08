@@ -3,6 +3,13 @@ extern crate rand;
 
 use std::io::Write;
 
+enum GameOption {
+    GameDone,
+    GameContinue,
+}
+
+use GameOption::*;
+
 fn main() {
     let ans = answer();
 
@@ -11,9 +18,11 @@ fn main() {
     loop {
         match return_guess("Enter your guess: ") {
             Some(guess) => {
-                if guess == ans {
-                    println!("You are right");
-                    break;
+                match evaluate_guess(guess, ans) { 
+                    GameDone => {
+                        break;
+                    },
+                    GameContinue => {}
                 }
             },
             None        => {
@@ -21,6 +30,24 @@ fn main() {
             }
         }
     }
+}
+
+fn evaluate_guess(guess: i32, ans: i32) -> GameOption
+{
+    match (guess - ans).abs() {
+        1...2 => {
+            println!("you are hot");
+        },
+        0 => {
+            println!("You are right");
+            return GameDone;
+        },
+        _ => {
+            println!("you are cold");
+        },
+    }
+    
+    GameContinue
 }
 
 fn return_guess(prompt:&str) -> Option<i32>
