@@ -38,6 +38,10 @@ fn is_digit(token: char) -> bool {
     }
 }
 
+fn is_alnum(token: char) -> bool {
+    is_alpha(token) || is_digit(token)
+}
+
 fn is_add_op(token: char) -> bool {
     match token {
         '+' | '-' => true,
@@ -45,12 +49,16 @@ fn is_add_op(token: char) -> bool {
     }
 }
 
-fn get_name(token: char, tokens: &mut io::Chars<io::Stdin>) -> (char, char) {
+fn get_name(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (String, char) {
     if !is_alpha(token) {
         expected("Name");
     }
-    let next_token = advance(tokens);
-    (token, next_token)
+    let mut name: String = "".to_string();
+    while is_alnum(token) {
+        name = format!("{}{}", name, token);
+        token = advance(tokens);
+    }
+    (name, token)
 }
 
 fn get_num(token: char, tokens: &mut io::Chars<io::Stdin>) -> (char, char) {
