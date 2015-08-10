@@ -17,11 +17,12 @@ fn advance(tokens: &mut io::Chars<io::Stdin>) -> char {
     }
 }
 
-fn consume(target: char, token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
+fn consume(target: char, mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
     if token != target {
         expected(format!("'{}'", target).as_str());
     }
-    advance(tokens)
+    token = advance(tokens);
+    skip_whitespace(token, tokens)
 }
 
 fn is_alpha(token: char) -> bool {
@@ -42,6 +43,20 @@ fn is_alnum(token: char) -> bool {
     is_alpha(token) || is_digit(token)
 }
 
+fn is_whitespace(token: char) -> bool {
+    match token {
+        ' ' | '\t' => true,
+        _          => false
+    }
+}
+
+fn skip_whitespace(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
+    while is_whitespace(token) {
+        token = advance(tokens);
+    }
+    token
+}
+
 fn is_add_op(token: char) -> bool {
     match token {
         '+' | '-' => true,
@@ -58,6 +73,7 @@ fn get_name(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (String, char
         name = format!("{}{}", name, token);
         token = advance(tokens);
     }
+    token = skip_whitespace(token, tokens);
     (name, token)
 }
 
@@ -70,6 +86,7 @@ fn get_num(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (String, char)
         num = format!("{}{}", num, token);
         token = advance(tokens);
     }
+    token = skip_whitespace(token, tokens);
     (num, token)
 }
 
@@ -203,7 +220,8 @@ fn main() {
     preamble();
 
     let mut tokens = io::stdin().chars();
-    let token = advance(&mut tokens);
+    let mut token = advance(&mut tokens);
+    token = skip_whitespace(token, &mut tokens);
     assignment(token, &mut tokens);
 
     wrapup();
