@@ -63,12 +63,16 @@ fn get_name(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (String, char
     (name, token)
 }
 
-fn get_num(token: char, tokens: &mut io::Chars<io::Stdin>) -> (char, char) {
+fn get_num(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (String, char) {
     if !is_digit(token) {
         expected("Integer");
     }
-    let next_token = advance(tokens);
-    (token, next_token)
+    let mut num: String = "".to_string();
+    while is_digit(token) {
+        num = format!("{}{}", num, token);
+        token = advance(tokens);
+    }
+    (num, token)
 }
 
 fn emitln(s: &str) {
