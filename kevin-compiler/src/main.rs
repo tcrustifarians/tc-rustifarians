@@ -24,7 +24,6 @@ fn consume(target: char, token: char, tokens: &mut io::Chars<io::Stdin>) -> char
     advance(tokens)
 }
 
-#[allow(dead_code)]
 fn is_alpha(token: char) -> bool {
     match token.to_uppercase().next().unwrap() {
         'A' ... 'Z' => true,
@@ -46,7 +45,6 @@ fn is_add_op(token: char) -> bool {
     }
 }
 
-#[allow(dead_code)]
 fn get_name(token: char, tokens: &mut io::Chars<io::Stdin>) -> (char, char) {
     if !is_alpha(token) {
         expected("Name");
@@ -67,12 +65,28 @@ fn emitln(s: &str) {
     println!("\t{}", s);
 }
 
+fn identifier(token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
+    let (name, mut token) = get_name(token, tokens);
+    if token == '(' {
+        token = consume('(', token, tokens);
+        token = consume(')', token, tokens);
+        emitln("pushq %rbp");
+        emitln("movq %rsp, %rbp");
+        emitln(format!("callq _{}", name).as_str());
+        return token
+    }
+    emitln(format!("movq _{}@GOTPCREL(%rip), %rax", name).as_str());
+    token
+}
+
 fn factor(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
     if token == '(' {
         token = consume('(', token, tokens);
         token = expression(token, tokens);
         token = consume(')', token, tokens);
         return token
+    } else if is_alpha(token) {
+        return identifier(token, tokens)
     }
 
     let (num, token) = get_num(token, tokens);
@@ -150,6 +164,14 @@ fn expression(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
     token
 }
 
+fn assignment(token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
+    let (name, mut token) = get_name(token, tokens);
+    token = consume('=', token, tokens);
+    token = expression(token, tokens);
+    emitln(format!("movq %rax, _{}@GOTPCREL(%rip)", name).as_str());
+    token
+}
+
 fn preamble() {
     println!(".text");
     println!(".globl _main");
@@ -170,7 +192,7 @@ fn main() {
 
     let mut tokens = io::stdin().chars();
     let token = advance(&mut tokens);
-    expression(token, &mut tokens);
+    assignment(token, &mut tokens);
 
     wrapup();
 }
