@@ -5,8 +5,8 @@ use std::io::prelude::*;
 use std::io;
 use std::process::exit;
 
-fn expected(s: &str) {
-    panic!("{} expected", s);
+macro_rules! expected {
+    ($fmt:expr) => (panic!("{} expected", $fmt));
 }
 
 fn advance(tokens: &mut io::Chars<io::Stdin>) -> char {
@@ -19,7 +19,7 @@ fn advance(tokens: &mut io::Chars<io::Stdin>) -> char {
 
 fn consume(target: char, mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
     if token != target {
-        expected(format!("'{}'", target).as_str());
+        expected!(format!("'{}'", target).as_str());
     }
     token = advance(tokens);
     skip_whitespace(token, tokens)
@@ -68,7 +68,7 @@ fn is_add_op(token: char) -> bool {
 #[allow(dead_code)]
 fn get_name(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (String, char) {
     if !is_alpha(token) {
-        expected("Name");
+        expected!("Name");
     }
     let mut name: String = "".to_string();
     while is_alnum(token) {
@@ -81,7 +81,7 @@ fn get_name(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (String, char
 
 fn get_num(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (String, char) {
     if !is_digit(token) {
-        expected("Integer");
+        expected!("Integer");
     }
     let mut num: String = "".to_string();
     while is_digit(token) {
@@ -173,7 +173,7 @@ fn expression(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
         match token {
             '+' => token = add(token, tokens),
             '-' => token = subtract(token, tokens),
-            _   => expected("add operation")
+            _   => expected!("add operation")
         }
     }
     token
