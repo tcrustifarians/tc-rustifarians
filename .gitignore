@@ -1,6 +1,6 @@
-target/**
 .backups
 **/.backups
+**/target
 
 *.swp
 *.log

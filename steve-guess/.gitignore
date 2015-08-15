@@ -1,7 +1,0 @@
-target
-
-# Vim
-*.swp
-.backups
-**/.backups
-
