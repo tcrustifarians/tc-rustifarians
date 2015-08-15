@@ -1,10 +1,10 @@
 
 mod simple_guessing_game;
+mod guessing_game;
 
 use simple_guessing_game::SimpleGuessingGame;
-use simple_guessing_game::GameOption;
-
-use simple_guessing_game::GuessingGame;
+use guessing_game::GameOption;
+use guessing_game::GuessingGame;
 
 
 fn main() {
