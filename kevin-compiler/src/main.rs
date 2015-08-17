@@ -79,128 +79,112 @@ fn get_name(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (String, char
     (name, token)
 }
 
-fn get_num(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (String, char) {
+fn get_num(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (i64, char) {
     if !is_digit(token) {
         expected!("Integer");
     }
-    let mut num: String = "".to_string();
+    let mut num: i64 = 0;
     while is_digit(token) {
-        num = format!("{}{}", num, token);
+        num = match token.to_digit(10) {
+            Some(i) => 10 * num + (i as i64),
+            None    => expected!("Digit")
+        };
         token = advance(tokens);
     }
     token = skip_whitespace(token, tokens);
     (num, token)
 }
 
-fn emitln(s: &str) {
-    println!("\t{}", s);
-}
-
-fn factor(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
+fn factor(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (i64, char) {
     if token == '(' {
         token = consume('(', token, tokens);
-        token = expression(token, tokens);
+        let value = match expression(token, tokens) {
+            (v, t) => {
+                token = t;
+                v
+            }
+        };
         token = consume(')', token, tokens);
-        return token
+        (value, token)
+    } else {
+        get_num(token, tokens)
     }
-
-    let (num, token) = get_num(token, tokens);
-    emitln(format!("movq ${}, %rax", num).as_str());
-    token
 }
 
-fn multiply(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    token = consume('*', token, tokens);
-    token = factor(token, tokens);
-    emitln("popq %rbx");
-    emitln("imulq %rbx");
-    token
-}
+fn term(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (i64, char) {
+    let mut value: i64 = match factor(token, tokens) {
+        (v, t) => {
+            token = t;
+            v
+        }
+    };
 
-fn divide(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    token = consume('/', token, tokens);
-    token = factor(token, tokens);
-    emitln("popq %rbx");
-    emitln("idivq %rbx");
-    token
-}
-
-fn term(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    token = factor(token, tokens);
     loop {
         match token {
             '*' => {
-                emitln("pushq %rax");
-                token = multiply(token, tokens);
+                token = consume('*', token, tokens);
+                value = match factor(token, tokens) {
+                    (v, t) => {
+                        token = t;
+                        value * v
+                    }
+                }
             },
             '/' => {
-                emitln("pushq %rax");
-                token = divide(token, tokens);
+                token = consume('/', token, tokens);
+                value = match factor(token, tokens) {
+                    (v, t) => {
+                        token = t;
+                        value / v
+                    }
+                }
             }
             _ => break
         }
     }
-    token
+    (value, token)
 }
 
-fn add(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    token = consume('+', token, tokens);
-    token = term(token, tokens);
-    emitln("popq %rbx");
-    emitln("addq %rbx, %rax");
-    token
-}
+fn expression(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (i64, char) {
+    let mut value: i64 = if is_add_op(token) {
+        0
+    } else {
+        let (v, t) = term(token, tokens);
+        token = t;
+        v
+    };
 
-fn subtract(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    token = consume('-', token, tokens);
-    token = term(token, tokens);
-    emitln("popq %rbx");
-    emitln("subq %rbx, %rax");
-    emitln("negq %rax");
-    token
-}
-
-fn expression(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    if is_add_op(token) {
-        emitln("xorq %rax, %rax");
-    }
-    else {
-        token = term(token, tokens);
-    }
-
-    while is_add_op(token) {
-        emitln("pushq %rax");
+    loop {
         match token {
-            '+' => token = add(token, tokens),
-            '-' => token = subtract(token, tokens),
-            _   => expected!("add operation")
+            '+' => {
+                token = consume('+', token, tokens);
+                value = match term(token, tokens) {
+                    (v, t) => {
+                        token = t;
+                        value + v
+                    }
+                }
+            },
+            '-' => {
+                token = consume('-', token, tokens);
+                value = match term(token, tokens) {
+                    (v, t) => {
+                        token = t;
+                        value - v
+                    }
+                }
+            },
+            _   => break
         }
     }
-    token
-}
 
-fn preamble() {
-    println!(".text");
-    println!(".globl _main");
-    println!("_main:");
-    emitln("pushq %rbp");
-    emitln("movq %rsp, %rbp");
-}
-
-fn wrapup() {
-    emitln("popq %rbp");
-    emitln("movq %rax, %rdi");
-    emitln("movq $0x2000001, %rax");
-    emitln("syscall");
+    (value, token)
 }
 
 fn main() {
-    preamble();
-
     let mut tokens = io::stdin().chars();
     let mut token = advance(&mut tokens);
     token = skip_whitespace(token, &mut tokens);
-    expression(token, &mut tokens);
-
-    wrapup();
+    let (value, _) = expression(token, &mut tokens);
+    println!("{}", value);
 }
