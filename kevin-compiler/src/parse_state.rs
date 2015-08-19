@@ -1,5 +1,6 @@
 use std::io;
 use std::process::exit;
+use std::collections::hash_map::HashMap;
 
 pub fn expected(s: &str) -> ! {
     panic!("{} expected", s);
@@ -39,14 +40,16 @@ pub fn is_add_op(token: char) -> bool {
 
 pub struct ParseState {
     pub token: char,
-    tokens: io::Chars<io::Stdin>
+    tokens: io::Chars<io::Stdin>,
+    pub var_table: HashMap<String, i64>
 }
 
 impl ParseState {
     pub fn new(char_stream: io::Chars<io::Stdin>) -> ParseState {
         let mut ps = ParseState {
             tokens: char_stream,
-            token: '\0'
+            token: '\0',
+            var_table: HashMap::new()
         };
         ps.advance();
         ps.skip_whitespace();
