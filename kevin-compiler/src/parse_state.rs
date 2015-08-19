@@ -2,8 +2,12 @@ use std::io;
 use std::process::exit;
 use std::collections::hash_map::HashMap;
 
+pub fn error(s: &str) -> ! {
+    panic!("Error: {}.", s);
+}
+
 pub fn expected(s: &str) -> ! {
-    panic!("{} expected", s);
+    error(format!("{} expected", s).as_str());
 }
 
 pub fn is_alpha(token: char) -> bool {
