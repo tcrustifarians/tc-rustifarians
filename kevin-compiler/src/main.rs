@@ -4,7 +4,6 @@
 use std::io::prelude::*;
 use std::io;
 
-#[macro_use]
 mod parse_state;
 use parse_state::*;
 

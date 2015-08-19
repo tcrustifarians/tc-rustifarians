@@ -1,9 +1,8 @@
 use std::io;
 use std::process::exit;
 
-#[macro_export]
-macro_rules! expected {
-    ($fmt:expr) => (panic!("{} expected", $fmt));
+pub fn expected(s: &str) -> ! {
+    panic!("{} expected", s);
 }
 
 pub fn is_alpha(token: char) -> bool {
@@ -70,7 +69,7 @@ impl ParseState {
 
     pub fn consume(&mut self, target: char) {
         if self.token != target {
-            expected!(format!("'{}'", target).as_str());
+            expected(format!("'{}'", target).as_str());
         }
         self.advance();
         self.skip_whitespace();
@@ -78,13 +77,13 @@ impl ParseState {
 
     pub fn get_num(&mut self) -> i64 {
         if !is_digit(self.token) {
-            expected!("Integer");
+            expected("Integer");
         }
         let mut num: i64 = 0;
         while is_digit(self.token) {
             num = match self.token.to_digit(10) {
                 Some(i) => 10 * num + (i as i64),
-                None    => expected!("Digit")
+                None    => expected("Digit")
             };
             self.advance();
         }
@@ -95,7 +94,7 @@ impl ParseState {
     #[allow(dead_code)]
     fn get_name(&mut self) -> String {
         if !is_alpha(self.token) {
-            expected!("Name");
+            expected("Name");
         }
         let mut name: String = "".to_string();
         while is_alnum(self.token) {
