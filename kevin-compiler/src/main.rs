@@ -90,14 +90,14 @@ fn input(parser: &mut ParseState) {
 }
 
 fn main() {
-    let mut parser = ParseState::new(io::stdin().chars());
+    let mut parser = &mut ParseState::new(io::stdin().chars());
     loop {
         match parser.token {
-            '?' => input(&mut parser),
+            '?' => input(parser),
             '.' => break,
-            _   => assignment(&mut parser)
+            _   => assignment(parser)
         }
-        newline(&mut parser);
+        newline(parser);
     }
     println!("{:?}", parser.var_table);
 }
