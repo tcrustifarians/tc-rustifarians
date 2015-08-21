@@ -13,6 +13,12 @@ fn factor(parser: &mut ParseState) -> i64 {
         let value = expression(parser);
         parser.consume(')');
         value
+    } else if is_alpha(parser.token) {
+        let name = parser.get_name();
+        match parser.var_table.get(name.as_str()) {
+            Some(v) => *v,
+            None    => error(format!("Undefined variable {}", name).as_str())
+        }
     } else {
         parser.get_num()
     }
