@@ -5,7 +5,7 @@ use std::io::prelude::*;
 use std::io;
 use std::process::exit;
 
-fn expected(s: &str) {
+fn expected(s: &str) -> ! {
     panic!("{} expected", s);
 }
 
