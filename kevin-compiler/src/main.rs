@@ -3,202 +3,110 @@
 
 use std::io::prelude::*;
 use std::io;
-use std::process::exit;
 
-fn expected(s: &str) -> ! {
-    panic!("{} expected", s);
-}
-
-fn advance(tokens: &mut io::Chars<io::Stdin>) -> char {
-    match tokens.next() {
-        None         => exit(0),
-        Some(Err(_)) => panic!("uh-oh"),
-        Some(Ok(c))  => c
-    }
-}
-
-fn consume(target: char, mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    if token != target {
-        expected(format!("'{}'", target).as_str());
-    }
-    token = advance(tokens);
-    skip_whitespace(token, tokens)
-}
-
-fn is_alpha(token: char) -> bool {
-    match token.to_uppercase().next().unwrap() {
-        'A' ... 'Z' => true,
-        _           => false
-    }
-}
-
-fn is_digit(token: char) -> bool {
-    match token {
-        '0' ... '9' => true,
-        _           => false
-    }
-}
-
-fn is_alnum(token: char) -> bool {
-    is_alpha(token) || is_digit(token)
-}
-
-fn is_whitespace(token: char) -> bool {
-    match token {
-        ' ' | '\t' => true,
-        _          => false
-    }
-}
-
-fn skip_whitespace(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    while is_whitespace(token) {
-        token = advance(tokens);
-    }
-    token
-}
-
-fn is_add_op(token: char) -> bool {
-    match token {
-        '+' | '-' => true,
-        _         => false
-    }
-}
-
-fn get_name(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (String, char) {
-    if !is_alpha(token) {
-        expected("Name");
-    }
-    let mut name: String = "".to_string();
-    while is_alnum(token) {
-        name = format!("{}{}", name, token);
-        token = advance(tokens);
-    }
-    token = skip_whitespace(token, tokens);
-    (name, token)
-}
-
-fn get_num(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> (String, char) {
-    if !is_digit(token) {
-        expected("Integer");
-    }
-    let mut num: String = "".to_string();
-    while is_digit(token) {
-        num = format!("{}{}", num, token);
-        token = advance(tokens);
-    }
-    token = skip_whitespace(token, tokens);
-    (num, token)
-}
+mod parse_state;
+use parse_state::*;
 
 fn emitln(s: &str) {
     println!("\t{}", s);
 }
 
-fn identifier(token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    let (name, mut token) = get_name(token, tokens);
-    if token == '(' {
-        token = consume('(', token, tokens);
-        token = consume(')', token, tokens);
+fn identifier(parser: &mut ParseState) {
+    let name = parser.get_name();
+    if parser.token == '(' {
+        parser.consume('(');
+        parser.consume(')');
         emitln("pushq %rbp");
         emitln("movq %rsp, %rbp");
         emitln(format!("callq _{}", name).as_str());
-        return token
+        return
     }
     emitln(format!("movq _{}@GOTPCREL(%rip), %rax", name).as_str());
-    token
 }
 
-fn factor(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    if token == '(' {
-        token = consume('(', token, tokens);
-        token = expression(token, tokens);
-        token = consume(')', token, tokens);
-        return token
-    } else if is_alpha(token) {
-        return identifier(token, tokens)
+fn factor(parser: &mut ParseState) {
+    if parser.token == '(' {
+        parser.consume('(');
+        expression(parser);
+        parser.consume(')');
+        return
+    } else if is_alpha(parser.token) {
+        return identifier(parser)
     }
 
-    let (num, token) = get_num(token, tokens);
+    let num = parser.get_num();
     emitln(format!("movq ${}, %rax", num).as_str());
-    token
 }
 
-fn multiply(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    token = consume('*', token, tokens);
-    token = factor(token, tokens);
+fn multiply(parser: &mut ParseState) {
+    parser.consume('*');
+    factor(parser);
     emitln("popq %rbx");
     emitln("imulq %rbx");
-    token
 }
 
-fn divide(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    token = consume('/', token, tokens);
-    token = factor(token, tokens);
+fn divide(parser: &mut ParseState) {
+    parser.consume('/');
+    factor(parser);
     emitln("popq %rbx");
     emitln("idivq %rbx");
-    token
 }
 
-fn term(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    token = factor(token, tokens);
+fn term(parser: &mut ParseState) {
+    factor(parser);
     loop {
-        match token {
+        match parser.token {
             '*' => {
                 emitln("pushq %rax");
-                token = multiply(token, tokens);
+                multiply(parser);
             },
             '/' => {
                 emitln("pushq %rax");
-                token = divide(token, tokens);
+                divide(parser);
             }
             _ => break
         }
     }
-    token
 }
 
-fn add(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    token = consume('+', token, tokens);
-    token = term(token, tokens);
+fn add(parser: &mut ParseState) {
+    parser.consume('+');
+    term(parser);
     emitln("popq %rbx");
     emitln("addq %rbx, %rax");
-    token
 }
 
-fn subtract(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    token = consume('-', token, tokens);
-    token = term(token, tokens);
+fn subtract(parser: &mut ParseState) {
+    parser.consume('-');
+    term(parser);
     emitln("popq %rbx");
     emitln("subq %rbx, %rax");
     emitln("negq %rax");
-    token
 }
 
-fn expression(mut token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    if is_add_op(token) {
+fn expression(parser: &mut ParseState) {
+    if is_add_op(parser.token) {
         emitln("xorq %rax, %rax");
     }
     else {
-        token = term(token, tokens);
+        term(parser);
     }
 
-    while is_add_op(token) {
+    while is_add_op(parser.token) {
         emitln("pushq %rax");
-        match token {
-            '+' => token = add(token, tokens),
-            '-' => token = subtract(token, tokens),
+        match parser.token {
+            '+' => add(parser),
+            '-' => subtract(parser),
             _   => expected("add operation")
         }
     }
-    token
 }
 
-fn assignment(token: char, tokens: &mut io::Chars<io::Stdin>) -> char {
-    let (name, mut token) = get_name(token, tokens);
-    token = consume('=', token, tokens);
-    token = expression(token, tokens);
+fn assignment(parser: &mut ParseState) {
+    let name = parser.get_name();
+    parser.consume('=');
+    expression(parser);
     emitln(format!("movq %rax, _{}@GOTPCREL(%rip)", name).as_str());
-    token
 }
 
 fn preamble() {
@@ -219,10 +127,8 @@ fn wrapup() {
 fn main() {
     preamble();
 
-    let mut tokens = io::stdin().chars();
-    let mut token = advance(&mut tokens);
-    token = skip_whitespace(token, &mut tokens);
-    assignment(token, &mut tokens);
+    let mut parser = &mut ParseState::new(io::stdin().chars());
+    assignment(parser);
 
     wrapup();
 }
