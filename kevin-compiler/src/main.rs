@@ -61,8 +61,15 @@ fn expression(parser: &mut ParseState) -> i64 {
     value
 }
 
+fn assignment(parser: &mut ParseState) {
+    let name = parser.get_name();
+    parser.consume('=');
+    let value = expression(parser);
+    parser.var_table.insert(name, value);
+}
+
 fn main() {
     let mut parser = ParseState::new(io::stdin().chars());
-    let value = expression(&mut parser);
-    println!("{}", value);
+    assignment(&mut parser);
+    println!("{:?}", parser.var_table);
 }
