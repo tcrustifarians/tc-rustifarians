@@ -89,11 +89,18 @@ fn input(parser: &mut ParseState) {
     parser.var_table.insert(name, value);
 }
 
+fn output(parser: &mut ParseState) {
+    parser.consume('!');
+    let value = expression(parser);
+    println!("{}", value);
+}
+
 fn main() {
     let mut parser = &mut ParseState::new(io::stdin().chars());
     loop {
         match parser.token {
             '?' => input(parser),
+            '!' => output(parser),
             '.' => break,
             _   => assignment(parser)
         }
