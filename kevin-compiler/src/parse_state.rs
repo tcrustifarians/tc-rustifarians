@@ -99,7 +99,7 @@ impl ParseState {
     }
 
     #[allow(dead_code)]
-    fn get_name(&mut self) -> String {
+    pub fn get_name(&mut self) -> String {
         if !is_alpha(self.token) {
             expected("Name");
         }
