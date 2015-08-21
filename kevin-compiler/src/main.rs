@@ -81,10 +81,22 @@ fn newline(parser: &mut ParseState) {
     parser.skip_newline();
 }
 
+fn input(parser: &mut ParseState) {
+    parser.consume('?');
+    let name = parser.get_name();
+    newline(parser);
+    let value = parser.get_num(); // only values allowed so far are integers
+    parser.var_table.insert(name, value);
+}
+
 fn main() {
     let mut parser = ParseState::new(io::stdin().chars());
-    while parser.token != '.' {
-        assignment(&mut parser);
+    loop {
+        match parser.token {
+            '?' => input(&mut parser),
+            '.' => break,
+            _   => assignment(&mut parser)
+        }
         newline(&mut parser);
     }
     println!("{:?}", parser.var_table);
