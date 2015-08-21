@@ -68,8 +68,18 @@ fn assignment(parser: &mut ParseState) {
     parser.var_table.insert(name, value);
 }
 
+fn newline(parser: &mut ParseState) {
+    if !is_newline(parser.token) {
+        expected("Newline");
+    }
+    parser.skip_newline();
+}
+
 fn main() {
     let mut parser = ParseState::new(io::stdin().chars());
-    assignment(&mut parser);
+    while parser.token != '.' {
+        assignment(&mut parser);
+        newline(&mut parser);
+    }
     println!("{:?}", parser.var_table);
 }

@@ -35,6 +35,13 @@ pub fn is_whitespace(token: char) -> bool {
     }
 }
 
+pub fn is_newline(token: char) -> bool {
+    match token {
+        '\n' | '\r' => true,
+        _           => false
+    }
+}
+
 pub fn is_add_op(token: char) -> bool {
     match token {
         '+' | '-' => true,
@@ -70,6 +77,12 @@ impl ParseState {
 
     pub fn skip_whitespace(&mut self) {
         while is_whitespace(self.token) {
+            self.advance();
+        }
+    }
+
+    pub fn skip_newline(&mut self) {
+        while is_newline(self.token) {
             self.advance();
         }
     }
