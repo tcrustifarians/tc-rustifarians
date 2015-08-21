@@ -75,7 +75,7 @@ fn assignment(parser: &mut ParseState) {
 }
 
 fn newline(parser: &mut ParseState) {
-    if !is_newline(parser.token) {
+    if !(is_newline(parser.token) || parser.token == '.') {
         expected("Newline");
     }
     parser.skip_newline();
