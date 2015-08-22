@@ -45,7 +45,8 @@ pub fn is_add_op(token: char) -> bool {
 pub struct ParseState {
     pub token: char,
     tokens: io::Chars<io::Stdin>,
-    pub var_table: HashMap<String, i64>
+    pub var_table: HashMap<String, i64>,
+    label_count: i64
 }
 
 impl ParseState {
@@ -53,7 +54,8 @@ impl ParseState {
         let mut ps = ParseState {
             tokens: char_stream,
             token: '\0',
-            var_table: HashMap::new()
+            var_table: HashMap::new(),
+            label_count: 0
         };
         ps.advance();
         ps.skip_whitespace();
@@ -106,5 +108,12 @@ impl ParseState {
         }
         self.skip_whitespace();
         name
+    }
+
+    #[allow(dead_code)]
+    pub fn new_label(&mut self) -> String {
+        let label = format!("L{}", self.label_count);
+        self.label_count += 1;
+        label
     }
 }
