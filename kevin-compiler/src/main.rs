@@ -11,102 +11,38 @@ fn emitln(s: &str) {
     println!("\t{}", s);
 }
 
-fn identifier(parser: &mut ParseState) {
-    let name = parser.get_name();
-    if parser.token == '(' {
-        parser.consume('(');
-        parser.consume(')');
-        emitln("pushq %rbp");
-        emitln("movq %rsp, %rbp");
-        emitln(format!("callq _{}", name).as_str());
-        return
-    }
-    emitln(format!("movq _{}@GOTPCREL(%rip), %rax", name).as_str());
+fn condition() {
+    emitln("<condition>");
 }
 
-fn factor(parser: &mut ParseState) {
-    if parser.token == '(' {
-        parser.consume('(');
-        expression(parser);
-        parser.consume(')');
-        return
-    } else if is_alpha(parser.token) {
-        return identifier(parser)
-    }
-
-    let num = parser.get_num();
-    emitln(format!("movq ${}, %rax", num).as_str());
+fn do_if(parser: &mut ParseState) {
+    parser.consume('i');
+    let label = parser.new_label();
+    condition();
+    emitln(&format!("jz {}", label));
+    block(parser);
+    parser.consume('e');
+    emitln(&format!("{}:", label));
 }
 
-fn multiply(parser: &mut ParseState) {
-    parser.consume('*');
-    factor(parser);
-    emitln("popq %rbx");
-    emitln("imulq %rbx");
+fn other(parser: &mut ParseState) {
+    emitln(&format!("{}", parser.get_name()));
 }
 
-fn divide(parser: &mut ParseState) {
-    parser.consume('/');
-    factor(parser);
-    emitln("popq %rbx");
-    emitln("idivq %rbx");
-}
-
-fn term(parser: &mut ParseState) {
-    factor(parser);
-    loop {
+fn block(parser: &mut ParseState) {
+    while parser.token != 'e' {
         match parser.token {
-            '*' => {
-                emitln("pushq %rax");
-                multiply(parser);
-            },
-            '/' => {
-                emitln("pushq %rax");
-                divide(parser);
-            }
-            _ => break
+            'i' => do_if(parser),
+            _   => other(parser)
         }
     }
 }
 
-fn add(parser: &mut ParseState) {
-    parser.consume('+');
-    term(parser);
-    emitln("popq %rbx");
-    emitln("addq %rbx, %rax");
-}
-
-fn subtract(parser: &mut ParseState) {
-    parser.consume('-');
-    term(parser);
-    emitln("popq %rbx");
-    emitln("subq %rbx, %rax");
-    emitln("negq %rax");
-}
-
-fn expression(parser: &mut ParseState) {
-    if is_add_op(parser.token) {
-        emitln("xorq %rax, %rax");
+fn program(parser: &mut ParseState) {
+    block(parser);
+    if parser.token != 'e' {
+        expected("End");
     }
-    else {
-        term(parser);
-    }
-
-    while is_add_op(parser.token) {
-        emitln("pushq %rax");
-        match parser.token {
-            '+' => add(parser),
-            '-' => subtract(parser),
-            _   => expected("add operation")
-        }
-    }
-}
-
-fn assignment(parser: &mut ParseState) {
-    let name = parser.get_name();
-    parser.consume('=');
-    expression(parser);
-    emitln(format!("movq %rax, _{}@GOTPCREL(%rip)", name).as_str());
 }
 
 fn preamble() {
@@ -128,7 +64,7 @@ fn main() {
     preamble();
 
     let mut parser = &mut ParseState::new(io::stdin().chars());
-    assignment(parser);
+    program(parser);
 
     wrapup();
 }

@@ -17,6 +17,7 @@ pub fn is_alpha(token: char) -> bool {
     }
 }
 
+#[allow(dead_code)]
 pub fn is_digit(token: char) -> bool {
     match token {
         '0' ... '9' => true,
@@ -24,6 +25,7 @@ pub fn is_digit(token: char) -> bool {
     }
 }
 
+#[allow(dead_code)]
 pub fn is_alnum(token: char) -> bool {
     is_alpha(token) || is_digit(token)
 }
@@ -35,6 +37,7 @@ pub fn is_whitespace(token: char) -> bool {
     }
 }
 
+#[allow(dead_code)]
 pub fn is_add_op(token: char) -> bool {
     match token {
         '+' | '-' => true,
@@ -84,6 +87,7 @@ impl ParseState {
         self.skip_whitespace();
     }
 
+    #[allow(dead_code)]
     pub fn get_num(&mut self) -> String {
         if !is_digit(self.token) {
             expected("Integer");
@@ -101,16 +105,12 @@ impl ParseState {
         if !is_alpha(self.token) {
             expected("Name");
         }
-        let mut name: String = "".to_string();
-        while is_alnum(self.token) {
-            name = format!("{}{}", name, self.token);
-            self.advance();
-        }
+        let name: String = format!("{}", self.token);
+        self.advance();
         self.skip_whitespace();
         name
     }
 
-    #[allow(dead_code)]
     pub fn new_label(&mut self) -> String {
         let label = format!("L{}", self.label_count);
         self.label_count += 1;
