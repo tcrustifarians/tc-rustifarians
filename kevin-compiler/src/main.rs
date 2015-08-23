@@ -1,5 +1,4 @@
 #![feature(io)]
-#![feature(convert)]
 
 use std::io::prelude::*;
 use std::io;

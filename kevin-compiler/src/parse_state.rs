@@ -7,7 +7,7 @@ pub fn error(s: &str) -> ! {
 }
 
 pub fn expected(s: &str) -> ! {
-    error(format!("{} expected", s).as_str());
+    error(&format!("{} expected", s));
 }
 
 pub fn is_alpha(token: char) -> bool {
@@ -81,7 +81,7 @@ impl ParseState {
 
     pub fn consume(&mut self, target: char) {
         if self.token != target {
-            expected(format!("'{}'", target).as_str());
+            expected(&format!("'{}'", target));
         }
         self.advance();
         self.skip_whitespace();
