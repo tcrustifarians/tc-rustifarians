@@ -17,12 +17,20 @@ fn condition() {
 
 fn do_if(parser: &mut ParseState) {
     parser.consume('i');
-    let label = parser.new_label();
+    let label1 = parser.new_label();
+    let mut label2 = label1.clone();
     condition();
-    emitln(&format!("jz {}", label));
+    emitln(&format!("jz {}", label1));
     block(parser);
+    if parser.token == 'l' {
+        parser.consume('l');
+        label2 = parser.new_label();
+        emitln(&format!("jmp {}", label2));
+        emitln(&format!("{}:", label1));
+        block(parser);
+    }
     parser.consume('e');
-    emitln(&format!("{}:", label));
+    emitln(&format!("{}:", label2));
 }
 
 fn other(parser: &mut ParseState) {
@@ -30,7 +38,7 @@ fn other(parser: &mut ParseState) {
 }
 
 fn block(parser: &mut ParseState) {
-    while parser.token != 'e' {
+    while !['e', 'l'].contains(&parser.token) {
         match parser.token {
             'i' => do_if(parser),
             _   => other(parser)
