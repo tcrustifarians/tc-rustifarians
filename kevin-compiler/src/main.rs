@@ -11,6 +11,10 @@ fn emitln(s: &str) {
     println!("\t{}", s);
 }
 
+fn emit_label(label: &str) {
+    println!("{}:", label);
+}
+
 fn condition() {
     emitln("<condition>");
 }
@@ -26,11 +30,11 @@ fn do_if(parser: &mut ParseState) {
         parser.consume('l');
         label2 = parser.new_label();
         emitln(&format!("jmp {}", label2));
-        emitln(&format!("{}:", label1));
+        emit_label(&label1);
         block(parser);
     }
     parser.consume('e');
-    emitln(&format!("{}:", label2));
+    emit_label(&label2);
 }
 
 fn other(parser: &mut ParseState) {
