@@ -45,6 +45,16 @@ fn do_loop(parser: &mut ParseState) {
     emitln(&format!("jmp {}", label));
 }
 
+fn do_repeat(parser: &mut ParseState) {
+    parser.consume('r');
+    let label = parser.new_label();
+    emit_label(&label);
+    block(parser);
+    parser.consume('u');
+    condition();
+    emitln(&format!("jz {}", label));
+}
+
 fn do_while(parser: &mut ParseState) {
     parser.consume('w');
     let label1 = parser.new_label();
@@ -63,10 +73,11 @@ fn other(parser: &mut ParseState) {
 }
 
 fn block(parser: &mut ParseState) {
-    while !['e', 'l'].contains(&parser.token) {
+    while !['e', 'l', 'u'].contains(&parser.token) {
         match parser.token {
             'i' => do_if(parser),
             'p' => do_loop(parser),
+            'r' => do_repeat(parser),
             'w' => do_while(parser),
             _   => other(parser)
         }
