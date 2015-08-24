@@ -68,6 +68,31 @@ fn do_while(parser: &mut ParseState) {
     emit_label(&label2);
 }
 
+fn do_for(parser: &mut ParseState) {
+    parser.consume('f');
+    let (label1, label2) = (parser.new_label(), parser.new_label());
+    let name = parser.get_name();
+    parser.consume('=');
+    expression(); // initial value
+    emitln("subq $1, %rax");
+    emitln(&format!("movq %rax, _{}@GOTPCREL(%rip)", name));
+    expression(); // final value
+    emitln("movq %rax, %rdx");
+    emit_label(&label1);
+    emitln(&format!("movq _{}@GOTPCREL(%rip), %rax", name));
+    emitln("incq %rax");
+    emitln(&format!("movq %rax, _{}@GOTPCREL(%rip)", name));
+    emitln("cmpq %rdx, %rax");
+    emitln(&format!("jle {}", label2));
+    block(parser);
+    emitln(&format!("jmp {}", label1));
+    emit_label(&label2);
+}
+
+fn expression() {
+    emitln("<expr>  ## leave result in %rax");
+}
+
 fn other(parser: &mut ParseState) {
     emitln(&format!("{}", parser.get_name()));
 }
@@ -76,6 +101,7 @@ fn block(parser: &mut ParseState) {
     while !['e', 'l', 'u'].contains(&parser.token) {
         match parser.token {
             'i' => do_if(parser),
+            'f' => do_for(parser),
             'p' => do_loop(parser),
             'r' => do_repeat(parser),
             'w' => do_while(parser),
