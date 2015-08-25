@@ -10,138 +10,6 @@ fn emitln(s: &str) {
     println!("\t{}", s);
 }
 
-fn emit_label(label: &str) {
-    println!("{}:", label);
-}
-
-fn condition() {
-    emitln("<condition>");
-}
-
-fn do_if(parser: &mut ParseState, label: &str) {
-    parser.consume('i');
-    let label1 = parser.new_label();
-    let mut label2 = label1.clone();
-    condition();
-    emitln(&format!("jz {}", label1));
-    block(parser, label);
-    if parser.token == 'l' {
-        parser.consume('l');
-        label2 = parser.new_label();
-        emitln(&format!("jmp {}", label2));
-        emit_label(&label1);
-        block(parser, label);
-    }
-    parser.consume('e');
-    emit_label(&label2);
-}
-
-fn do_break(parser: &mut ParseState, label: &str) {
-    parser.consume('b');
-    if label == "" {
-        error("No loop to break from");
-    }
-    emitln(&format!("jmp {}", label));
-}
-
-fn do_loop(parser: &mut ParseState) {
-    parser.consume('p');
-    let (label1, label2) = (parser.new_label(), parser.new_label());
-    emit_label(&label1);
-    block(parser, &label2);
-    parser.consume('e');
-    emitln(&format!("jmp {}", label1));
-    emit_label(&label2);
-}
-
-fn do_do(parser: &mut ParseState) {
-    parser.consume('d');
-    let (label1, label2) = (parser.new_label(), parser.new_label());
-    expression();
-    emitln("mov %eax, %ecx");
-    emitln("cmp %ecx, 0");
-    emitln(&format!("je {}", label2));
-    emit_label(&label1);
-    block(parser, &label2);
-    emitln(&format!("loop {}", label1));
-    emit_label(&label2);
-}
-
-fn do_repeat(parser: &mut ParseState) {
-    parser.consume('r');
-    let (label1, label2) = (parser.new_label(), parser.new_label());
-    emit_label(&label1);
-    block(parser, &label2);
-    parser.consume('u');
-    condition();
-    emitln(&format!("jz {}", label1));
-    emit_label(&label2);
-}
-
-fn do_while(parser: &mut ParseState) {
-    parser.consume('w');
-    let label1 = parser.new_label();
-    let label2 = parser.new_label();
-    emit_label(&label1);
-    condition();
-    emitln(&format!("jz {}", label2));
-    block(parser, &label2);
-    parser.consume('e');
-    emitln(&format!("jmp {}", label1));
-    emit_label(&label2);
-}
-
-fn do_for(parser: &mut ParseState) {
-    parser.consume('f');
-    let (label1, label2) = (parser.new_label(), parser.new_label());
-    let name = parser.get_name();
-    parser.consume('=');
-    expression(); // initial value
-    emitln("subq $1, %rax");
-    emitln(&format!("movq %rax, _{}@GOTPCREL(%rip)", name));
-    expression(); // final value
-    emitln("movq %rax, %rdx");
-    emit_label(&label1);
-    emitln(&format!("movq _{}@GOTPCREL(%rip), %rax", name));
-    emitln("incq %rax");
-    emitln(&format!("movq %rax, _{}@GOTPCREL(%rip)", name));
-    emitln("cmpq %rdx, %rax");
-    emitln(&format!("jle {}", label2));
-    block(parser, &label2);
-    emitln(&format!("jmp {}", label1));
-    emit_label(&label2);
-}
-
-fn expression() {
-    emitln("<expr>  ## leave result in %rax");
-}
-
-fn other(parser: &mut ParseState) {
-    emitln(&format!("{}", parser.get_name()));
-}
-
-fn block(parser: &mut ParseState, label: &str) {
-    while !['e', 'l', 'u'].contains(&parser.token) {
-        match parser.token {
-            'b' => do_break(parser, label),
-            'd' => do_do(parser),
-            'f' => do_for(parser),
-            'i' => do_if(parser, label),
-            'p' => do_loop(parser),
-            'r' => do_repeat(parser),
-            'w' => do_while(parser),
-            _   => other(parser)
-        }
-    }
-}
-
-fn program(parser: &mut ParseState) {
-    block(parser, "");
-    if parser.token != 'e' {
-        expected("End");
-    }
-}
-
 fn preamble() {
     println!(".text");
     println!(".globl _main");
@@ -157,11 +25,64 @@ fn wrapup() {
     emitln("syscall");
 }
 
+fn bool_factor(parser: &mut ParseState) {
+    if parser.get_boolean() {
+        emitln("movq $-1, %rax");
+    } else {
+        emitln("xorq %rax, %rax");
+    }
+}
+
+fn not_factor(parser: &mut ParseState) {
+    if !is_not_op(parser.token) {
+        bool_factor(parser);
+        return;
+    }
+    parser.consume('!');
+    bool_factor(parser);
+    emitln("not %eax");
+}
+
+fn bool_term(parser: &mut ParseState) {
+    not_factor(parser);
+    while is_and_op(parser.token) {
+        emitln("pushq %rax");
+        parser.consume('&');
+        not_factor(parser);
+        emitln("andq (%rsp), %rax");
+        emitln("addq $8, %rsp");
+    }
+}
+
+fn bool_or(parser: &mut ParseState) {
+    parser.consume('|');
+    bool_term(parser);
+    emitln("or (%rsp), %rax");
+}
+
+fn bool_xor(parser: &mut ParseState) {
+    parser.consume('^');
+    bool_term(parser);
+    emitln("xor (%rsp), %rax");
+}
+
+fn bool_expression(parser: &mut ParseState) {
+    bool_term(parser);
+    while is_or_op(parser.token) {
+        emitln("pushq %rax");
+        match parser.token {
+            '|' => bool_or(parser),
+            '^' => bool_xor(parser),
+            _   => break
+        }
+    }
+}
+
 fn main() {
     preamble();
 
     let mut parser = &mut ParseState::new(io::stdin().chars());
-    program(parser);
+    bool_expression(parser);
 
     wrapup();
 }

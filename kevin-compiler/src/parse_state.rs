@@ -10,26 +10,6 @@ pub fn expected(s: &str) -> ! {
     error(&format!("{} expected", s));
 }
 
-pub fn is_alpha(token: char) -> bool {
-    match token.to_uppercase().next().unwrap() {
-        'A' ... 'Z' => true,
-        _           => false
-    }
-}
-
-#[allow(dead_code)]
-pub fn is_digit(token: char) -> bool {
-    match token {
-        '0' ... '9' => true,
-        _           => false
-    }
-}
-
-#[allow(dead_code)]
-pub fn is_alnum(token: char) -> bool {
-    is_alpha(token) || is_digit(token)
-}
-
 pub fn is_whitespace(token: char) -> bool {
     match token {
         ' ' | '\t' => true,
@@ -37,19 +17,32 @@ pub fn is_whitespace(token: char) -> bool {
     }
 }
 
-#[allow(dead_code)]
-pub fn is_add_op(token: char) -> bool {
+pub fn is_not_op(token: char) -> bool {
+    token == '!'
+}
+
+pub fn is_or_op(token: char) -> bool {
     match token {
-        '+' | '-' => true,
+        '|' | '~' => true,
         _         => false
+    }
+}
+
+pub fn is_and_op(token: char) -> bool {
+    token == '&'
+}
+
+pub fn is_boolean(token: char) -> bool {
+    match token {
+        'T' | 'F' | 't' | 'f' => true,
+        _                     => false
     }
 }
 
 pub struct ParseState {
     pub token: char,
     tokens: io::Chars<io::Stdin>,
-    pub var_table: HashMap<String, i64>,
-    label_count: i64
+    pub var_table: HashMap<String, i64>
 }
 
 impl ParseState {
@@ -57,8 +50,7 @@ impl ParseState {
         let mut ps = ParseState {
             tokens: char_stream,
             token: '\0',
-            var_table: HashMap::new(),
-            label_count: 0
+            var_table: HashMap::new()
         };
         ps.advance();
         ps.skip_whitespace();
@@ -87,33 +79,16 @@ impl ParseState {
         self.skip_whitespace();
     }
 
-    #[allow(dead_code)]
-    pub fn get_num(&mut self) -> String {
-        if !is_digit(self.token) {
-            expected("Integer");
+    pub fn get_boolean(&mut self) -> bool {
+        if !is_boolean(self.token) {
+            expected("Boolean Literal");
         }
-        let mut num = String::from("");
-        while is_digit(self.token) {
-            num = format!("{}{}", num, self.token);
-            self.advance();
-        }
-        self.skip_whitespace();
-        num
-    }
 
-    pub fn get_name(&mut self) -> String {
-        if !is_alpha(self.token) {
-            expected("Name");
-        }
-        let name: String = format!("{}", self.token);
+        let ch = self.token.to_uppercase().next().expect(
+            "boolean literal was not 'T' or 'F'!");
+        let value = ch == 'T';
         self.advance();
         self.skip_whitespace();
-        name
-    }
-
-    pub fn new_label(&mut self) -> String {
-        let label = format!("L{}", self.label_count);
-        self.label_count += 1;
-        label
+        value
     }
 }
