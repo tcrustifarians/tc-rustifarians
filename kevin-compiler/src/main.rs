@@ -25,7 +25,17 @@ fn wrapup() {
     emitln("syscall");
 }
 
+fn relation(parser: &mut ParseState) {
+    emitln("<relation>");
+    parser.advance();
+}
+
 fn bool_factor(parser: &mut ParseState) {
+    if !is_boolean(parser.token) {
+        relation(parser);
+        return;
+    }
+
     if parser.get_boolean() {
         emitln("movq $-1, %rax");
     } else {
