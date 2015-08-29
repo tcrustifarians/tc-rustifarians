@@ -7,3 +7,7 @@
 
 prgm
 prgm.s
+
+*.bundle
+*.dylib
+*.so
