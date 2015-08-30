@@ -20,3 +20,6 @@ steve-httptest
 kevin-compiler:
 : A Rust translation of
   ["Let's Build a Compiler"](http://compilers.iecc.com/crenshaw/)
+
+kevin-rack:
+: A Rack endpoint implemented in Rust
