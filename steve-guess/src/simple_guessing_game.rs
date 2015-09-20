@@ -3,35 +3,29 @@ use std::io::prelude::*;
 extern crate rand;
 
 use guessing_game::GuessingGame;
-use guessing_game::GameOption;
+//use guessing_game::GameOption;
 
-pub struct SimpleGuessingGame;
+pub struct SimpleGuessingGame {
+    answer: i32
+}
 
 impl SimpleGuessingGame {
+
     pub fn new() -> Self {
-        SimpleGuessingGame
+        SimpleGuessingGame {
+            answer: SimpleGuessingGame::pick_answer()
+        }
+    }
+
+    fn pick_answer() -> i32
+    {
+      let num = rand::random::<f32>();
+      let ans = (num * 10.0).floor() as i32;
+      ans
     }
 }
 
 impl GuessingGame for SimpleGuessingGame {
-
-    fn evaluate_guess(&self, guess: i32, ans: i32) -> GameOption
-    {
-        match (guess - ans).abs() {
-            1...2 => {
-                println!("you are hot");
-            },
-            0 => {
-                println!("You are right");
-                return GameOption::GameDone;
-            },
-            _ => {
-                println!("you are cold");
-            },
-        }
-        
-        GameOption::GameContinue
-    }
 
     fn return_guess(&self, prompt:&str) -> Option<i32>
     {
@@ -48,11 +42,10 @@ impl GuessingGame for SimpleGuessingGame {
     }
 
 
-    fn answer(&self) -> i32
+    fn get_answer(&self) -> i32
     {
-      let num = rand::random::<f32>();
-      let ans: i32 = (num * 10.0).floor() as i32;
-      ans
+        self.answer
     }
+
 }
 

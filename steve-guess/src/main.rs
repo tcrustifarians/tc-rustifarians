@@ -10,14 +10,12 @@ use guessing_game::GuessingGame;
 fn main() {
     let game = SimpleGuessingGame::new();
 
-    let ans = game.answer();
-
-    println!("Answer: {}", ans);
+    println!("Answer: {}", game.get_answer());
 
     loop {
         match game.return_guess("Enter your guess: ") {
             Some(guess) => {
-                match game.evaluate_guess(guess, ans) { 
+                match game.evaluate_guess(guess, game.get_answer()) { 
                     GameOption::GameDone => {
                         break;
                     },
@@ -28,6 +26,7 @@ fn main() {
                 println!("Invalid guess. It is not a number");
             }
         }
+        game.after_guess()
     }
 }
 
