@@ -1,5 +1,3 @@
-use std::io::prelude::*;
-
 extern crate rand;
 
 use guessing_game::GuessingGame;
@@ -29,16 +27,8 @@ impl GuessingGame for SimpleGuessingGame {
 
     fn return_guess(&self, prompt:&str) -> Option<i32>
     {
-      print!("{}", prompt);
-      let _ = ::std::io::stdout().flush();
-
-      let mut string = String::new();
-
-      ::std::io::stdin().read_line(&mut string)
-               .ok()
-               .expect("Failed to read line");
-
-      string.trim().parse::<i32>().ok()
+        let response = Self::display_prompt_and_get_response(prompt); 
+        response.trim().parse::<i32>().ok()
     }
 
 

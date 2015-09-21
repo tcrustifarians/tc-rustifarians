@@ -1,3 +1,5 @@
+use std::io::prelude::*;
+
 pub enum GameOption {
     GameDone,
     GameContinue,
@@ -22,8 +24,8 @@ pub trait GuessingGame {
         
         GameOption::GameContinue
     }
-/*
-    fn display_prompt_and_get_response() -> String
+
+    fn display_prompt_and_get_response(prompt:&str) -> String
     {
       print!("{}", prompt);
       let _ = ::std::io::stdout().flush();
@@ -36,7 +38,6 @@ pub trait GuessingGame {
 
       string
     }
-*/
 
     fn return_guess(&self, prompt:&str) -> Option<i32>;
     fn get_answer(&self) -> i32;
