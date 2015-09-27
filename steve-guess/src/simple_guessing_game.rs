@@ -1,7 +1,8 @@
 extern crate rand;
 
 use guessing_game::GuessingGame;
-//use guessing_game::GameOption;
+use user_io::display_prompt_and_get_response;
+
 
 pub struct SimpleGuessingGame {
     answer: i32
@@ -25,9 +26,9 @@ impl SimpleGuessingGame {
 
 impl GuessingGame for SimpleGuessingGame {
 
-    fn return_guess(&self, prompt:&str) -> Option<i32>
+    fn get_guess_from_user(&self, prompt:&str) -> Option<i32>
     {
-        let response = Self::display_prompt_and_get_response(prompt); 
+        let response = display_prompt_and_get_response(prompt); 
         response.trim().parse::<i32>().ok()
     }
 
