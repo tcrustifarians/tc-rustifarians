@@ -34,11 +34,13 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn init(&mut self) {
-        for index in 0..63 {
-            self.squares[index] = Square::Empty
+    pub fn new() -> Self {
+        Board {
+            squares: [Square::Empty; 64] 
         }
+    }
 
+    pub fn init(&mut self) {
         //self.squares[Board::ind(AN::A, 1)] =  Square::Rook(Color::White);
         self.squares[0] =  Square::Rook(Color::White);
         self.squares[1] =  Square::Bishop(Color::White)
