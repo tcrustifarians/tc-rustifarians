@@ -41,13 +41,39 @@ impl Board {
     }
 
     pub fn init(&mut self) {
+        // get rid of unused warnings
+        self.squares[Self::ind(AN::C, 1)] =  Square::Empty;
+        self.squares[Self::ind(AN::D, 1)] =  Square::Empty;
+        self.squares[Self::ind(AN::E, 1)] =  Square::Empty;
+        self.squares[Self::ind(AN::F, 1)] =  Square::Empty;
+
         //self.squares[Board::ind(AN::A, 1)] =  Square::Rook(Color::White);
-        self.squares[0] =  Square::Rook(Color::White);
-        self.squares[1] =  Square::Bishop(Color::White)
+        self.squares[Self::ind(AN::A, 1)] =  Square::Rook(Color::White);
+        self.squares[Self::ind(AN::A, 2)] =  Square::Knight(Color::White);
+        self.squares[Self::ind(AN::A, 3)] =  Square::Bishop(Color::White);
+        self.squares[Self::ind(AN::A, 4)] =  Square::Queen(Color::White);
+        self.squares[Self::ind(AN::A, 5)] =  Square::King(Color::White);
+        self.squares[Self::ind(AN::A, 6)] =  Square::Bishop(Color::White);
+        self.squares[Self::ind(AN::A, 7)] =  Square::Knight(Color::White);
+        self.squares[Self::ind(AN::A, 8)] =  Square::Rook(Color::White);
+
+        self.squares[Self::ind(AN::H, 1)] =  Square::Rook(Color::Black);
+        self.squares[Self::ind(AN::H, 2)] =  Square::Knight(Color::Black);
+        self.squares[Self::ind(AN::H, 3)] =  Square::Bishop(Color::Black);
+        self.squares[Self::ind(AN::H, 4)] =  Square::Queen(Color::Black);
+        self.squares[Self::ind(AN::H, 5)] =  Square::King(Color::Black);
+        self.squares[Self::ind(AN::H, 6)] =  Square::Bishop(Color::Black);
+        self.squares[Self::ind(AN::H, 7)] =  Square::Knight(Color::Black);
+        self.squares[Self::ind(AN::H, 8)] =  Square::Rook(Color::Black);
+
+        for index in 1..8 {
+            self.squares[Self::ind(AN::B, index)] =  Square::Pawn(Color::White);
+            self.squares[Self::ind(AN::G, index)] =  Square::Pawn(Color::Black);
+        }
     }
 
-    fn ind(row: AN, col: i32) -> i32
+    fn ind(row: AN, col: i32) -> usize
     {
-        (row as i32) * 8 + (col - 1)
+        ((row as i32) * 8 + (col - 1)) as usize
     }
 }
