@@ -1,0 +1,8 @@
+[package]
+name = "tilby"
+version = "0.1.0"
+authors = ["Cory Preus <cory@crux.mn>"]
+
+[dependencies]
+getopts = "0.2"
+open    = "1.1.0"
